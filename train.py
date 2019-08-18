@@ -177,15 +177,9 @@ elif FEATURES and u_features is not None and v_features is not None:
     # use features as side information and node_id's as node input features
 
     print("Normalizing feature vectors...")
-    # liy - u_features 是个神马东西？user本身有age,zipcode ，occupation三个属性呢
-    # liy u_features 有23个属性，应该是把zipcode和occupation给one-hot离散化了
-
-    # liy -- 这个东西是对一个tuple的归一化，如果一个向量变成one-hot之后多个点都是1，这些点的权重也会减小
-    # 这个东西并不是对于一个属性的归一化，比如年龄神马的，不知道为什么要做这个操作，貌似是对属性稠密点和稀疏点做的一个归一化
     u_features_side = normalize_features(u_features)
     v_features_side = normalize_features(v_features)
 
-    #liy - 为什么要做这个hstack操作?
     u_features_side, v_features_side = preprocess_user_item_features(u_features_side, v_features_side)
 
     u_features_side = np.array(u_features_side.todense(), dtype=np.float32)
@@ -298,7 +292,6 @@ else:
     train_v_features_side = None
 
 placeholders = {
-    #liy: 注意着placeholder 最前面没有？，就是说全量梯度下降，没有batch
     'u_features': tf.sparse_placeholder(tf.float32, shape=np.array(u_features.shape, dtype=np.int64)),
     'v_features': tf.sparse_placeholder(tf.float32, shape=np.array(v_features.shape, dtype=np.int64)),
     'u_features_nonzero': tf.placeholder(tf.int32, shape=()),

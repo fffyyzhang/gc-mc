@@ -286,7 +286,7 @@ class RecommenderSideInfoGAE(Model):
                                                  logging=self.logging,
                                                  share_user_item_weights=True,
                                                  self_connections=self.self_connections))
-
+        # liy 默认参数用的是这个选项
         elif self.accum == 'stack':
             self.layers.append(StackGCN(input_dim=self.input_dim,
                                         output_dim=self.hidden[0],

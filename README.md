@@ -13,7 +13,7 @@ Rianne van den Berg, Thomas N. Kipf, Max Welling, [Graph Convolutional Matrix Co
   * Python 2.7
   * TensorFlow (1.4)
   * pandas
-
+  * liy - pandas 0.21 可以用
 
 ## Usage
 

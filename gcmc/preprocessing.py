@@ -3,7 +3,8 @@ from __future__ import print_function
 
 import numpy as np
 import scipy.sparse as sp
-import cPickle as pkl
+#import _pickle as cPickle
+import pickle as pkl
 import os
 import h5py
 import pandas as pd
@@ -62,6 +63,7 @@ def preprocess_user_item_features(u_features, v_features):
     Stacks item features under the user features.
     """
 
+    #liy - 注意这个u和v是反过来的csr_u的列数量是v_features.shape[1]
     zero_csr_u = sp.csr_matrix((u_features.shape[0], v_features.shape[1]), dtype=u_features.dtype)
     zero_csr_v = sp.csr_matrix((v_features.shape[0], u_features.shape[1]), dtype=v_features.dtype)
 
@@ -337,7 +339,7 @@ def load_official_trainvaltest_split(dataset, testing=False):
     fname = dataset
     data_dir = 'data/' + fname
 
-    download_dataset(fname, files, data_dir)
+    download_dataset(fname, files, data_dir) #liy : 自己下数据，啥也不干
 
     dtypes = {
         'u_nodes': np.int32, 'v_nodes': np.int32,
@@ -346,6 +348,7 @@ def load_official_trainvaltest_split(dataset, testing=False):
     filename_train = 'data/' + dataset + '/u1.base'
     filename_test = 'data/' + dataset + '/u1.test'
 
+    #liy 他这里读取列的时候指定了列的类型dtype
     data_train = pd.read_csv(
         filename_train, sep=sep, header=None,
         names=['u_nodes', 'v_nodes', 'ratings', 'timestamp'], dtype=dtypes)
@@ -354,6 +357,7 @@ def load_official_trainvaltest_split(dataset, testing=False):
         filename_test, sep=sep, header=None,
         names=['u_nodes', 'v_nodes', 'ratings', 'timestamp'], dtype=dtypes)
 
+    # .values 不可以吗
     data_array_train = data_train.as_matrix().tolist()
     data_array_train = np.array(data_array_train)
     data_array_test = data_test.as_matrix().tolist()
@@ -361,13 +365,15 @@ def load_official_trainvaltest_split(dataset, testing=False):
 
     data_array = np.concatenate([data_array_train, data_array_test], axis=0)
 
-    u_nodes_ratings = data_array[:, 0].astype(dtypes['u_nodes'])
-    v_nodes_ratings = data_array[:, 1].astype(dtypes['v_nodes'])
+    #liy 这里还用astype吗...
+    u_nodes_ratings = data_array[:, 0].astype(dtypes['u_nodes']) #user id
+    v_nodes_ratings = data_array[:, 1].astype(dtypes['v_nodes']) #item id
     ratings = data_array[:, 2].astype(dtypes['ratings'])
 
     u_nodes_ratings, u_dict, num_users = map_data(u_nodes_ratings)
     v_nodes_ratings, v_dict, num_items = map_data(v_nodes_ratings)
 
+    #liy 为啥一个用int32 一个用int64呢？
     u_nodes_ratings, v_nodes_ratings = u_nodes_ratings.astype(np.int64), v_nodes_ratings.astype(np.int32)
     ratings = ratings.astype(np.float64)
 
@@ -380,12 +386,13 @@ def load_official_trainvaltest_split(dataset, testing=False):
     rating_dict = {r: i for i, r in enumerate(np.sort(np.unique(ratings)).tolist())}
 
     labels = np.full((num_users, num_items), neutral_rating, dtype=np.int32)
+    #将rating离散化
     labels[u_nodes, v_nodes] = np.array([rating_dict[r] for r in ratings])
 
     for i in range(len(u_nodes)):
         assert(labels[u_nodes[i], v_nodes[i]] == rating_dict[ratings[i]])
 
-    labels = labels.reshape([-1])
+    labels = labels.reshape([-1]) #liy - 拍扁？
 
     # number of test and validation edges, see cf-nade code
 
@@ -395,6 +402,7 @@ def load_official_trainvaltest_split(dataset, testing=False):
     num_train = num_train - num_val
 
     pairs_nonzero = np.array([[u, v] for u, v in zip(u_nodes, v_nodes)])
+    #liy - nonzero 元素在训练矩阵中的idx(矩阵拍扁状态)
     idx_nonzero = np.array([u * num_items + v for u, v in pairs_nonzero])
 
     for i in range(len(ratings)):
@@ -407,7 +415,7 @@ def load_official_trainvaltest_split(dataset, testing=False):
     pairs_nonzero_test = pairs_nonzero[num_train+num_val:]
 
     # Internally shuffle training set (before splitting off validation set)
-    rand_idx = range(len(idx_nonzero_train))
+    rand_idx = list(range(len(idx_nonzero_train)))
     np.random.seed(42)
     np.random.shuffle(rand_idx)
     idx_nonzero_train = idx_nonzero_train[rand_idx]

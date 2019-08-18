@@ -158,14 +158,17 @@ class StackGCN(Layer):
         assert output_dim % num_support == 0, 'output_dim must be multiple of num_support for stackGC layer'
 
         with tf.variable_scope(self.name + '_vars'):
+            #glorot权值初始化
             self.vars['weights_u'] = weight_variable_random_uniform(input_dim, output_dim, name='weights_u')
 
             if not share_user_item_weights:
                 self.vars['weights_v'] = weight_variable_random_uniform(input_dim, output_dim, name='weights_v')
 
             else:
+                #liy user和item的feature维度都不同，怎么share?
                 self.vars['weights_v'] = self.vars['weights_u']
 
+        # 切分channel
         self.weights_u = tf.split(value=self.vars['weights_u'], axis=1, num_or_size_splits=num_support)
         self.weights_v = tf.split(value=self.vars['weights_v'], axis=1, num_or_size_splits=num_support)
 
